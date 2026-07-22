@@ -8,12 +8,9 @@ export async function GET() {
   const db = getDb();
   const students = await db.prepare('SELECT * FROM students').all();
   const subjects = await db.prepare('SELECT * FROM subjects').all();
-  const totalSessionsResult = await db.prepare('SELECT COUNT(*) AS count FROM attendance_sessions').get();
-  const totalRecordsResult = await db.prepare('SELECT COUNT(*) AS count FROM attendance_records').get();
-  const total_sessions = totalSessionsResult?.count || 0;
-  const total_records = totalRecordsResult?.count || 0;
-
-  return NextResponse.json({ students, subjects, total_sessions, total_records });
+  const sessions = await db.prepare('SELECT * FROM attendance_sessions ORDER BY created_at DESC').all();
+  const records = await db.prepare('SELECT * FROM attendance_records ORDER BY created_at DESC').all();
+  return NextResponse.json({ students, subjects, sessions, records });
 }
 
 export async function POST(request: NextRequest) {
