@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import { getSupabaseAdminClient, getSupabaseConfig } from './supabase';
+import { getSupabaseConfig } from './supabase';
 
 type TableName = 'teachers' | 'students' | 'subjects' | 'attendance_sessions' | 'attendance_records';
 
@@ -419,8 +419,8 @@ let db: JsonDatabase | SupabaseDatabase | null = null;
 
 export function getDb() {
   if (!db) {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    db = serviceRoleKey ? new SupabaseDatabase(serviceRoleKey) : new JsonDatabase(dbPath);
+    const accessKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_cB3hcjoIkWlhRbpCeuUKsQ_vC9BHfKz';
+    db = accessKey ? new SupabaseDatabase(accessKey) : new JsonDatabase(dbPath);
   }
 
   return db;
