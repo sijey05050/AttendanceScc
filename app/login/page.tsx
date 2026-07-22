@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -14,8 +13,11 @@ export default function LoginPage() {
     e.preventDefault();
     setMessage('');
 
+    const isTeacherLogin = username.trim().startsWith('@');
+    const loginType = isTeacherLogin ? 'teacher-login' : 'student-login';
+
     try {
-      const response = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: role === 'student' ? 'student-login' : 'teacher-login', username, password }) });
+      const response = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: loginType, username, password }) });
       let data: any = {};
       try {
         data = await response.json();
@@ -33,6 +35,7 @@ export default function LoginPage() {
         return;
       }
 
+      const role = data.user.role || (isTeacherLogin ? 'teacher' : 'student');
       localStorage.setItem('role', role);
       localStorage.setItem('user', JSON.stringify(data.user));
       router.push(role === 'student' ? '/dashboard' : '/teacher');
