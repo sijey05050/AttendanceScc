@@ -12,15 +12,33 @@ export default function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const response = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: role === 'student' ? 'student-login' : 'teacher-login', username, password }) });
-    const data = await response.json();
-    if (!response.ok) {
-      setMessage(data.error || 'Failed');
-      return;
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: role === 'student' ? 'student-login' : 'teacher-login', username, password }) });
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      if (!response.ok) {
+        setMessage(data.error || 'Login failed');
+        return;
+      }
+
+      if (!data.user) {
+        setMessage('Login response was invalid.');
+        return;
+      }
+
+      localStorage.setItem('role', role);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      router.push(role === 'student' ? '/dashboard' : '/teacher');
+    } catch {
+      setMessage('Unable to reach the server right now.');
     }
-    localStorage.setItem('role', role);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    router.push(role === 'student' ? '/dashboard' : '/teacher');
   };
 
   return (

@@ -26,10 +26,19 @@ export default function TeacherPage() {
   }, [router]);
 
   const loadData = async () => {
-    const response = await fetch('/api/teacher');
-    const data = await response.json();
-    setStudents(data.students || []);
-    setSubjects(data.subjects || []);
+    try {
+      const response = await fetch('/api/teacher');
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+      setStudents(data.students || []);
+      setSubjects(data.subjects || []);
+    } catch {
+      setMessage('Unable to load teacher data.');
+    }
   };
 
   const createSession = async (subjectName: string) => {

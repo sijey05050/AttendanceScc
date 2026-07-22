@@ -20,18 +20,35 @@ export default function DashboardPage() {
       router.push('/login');
       return;
     }
-    const parsed = JSON.parse(stored);
-    setUser(parsed);
-    setSection(parsed.year_section || '2-A');
 
-    if (typeof window !== 'undefined') {
+    try {
+      const parsed = JSON.parse(stored);
+      setUser(parsed);
+      setSection(parsed.year_section || '2-A');
+    } catch {
+      localStorage.removeItem('user');
+      localStorage.removeItem('role');
+      router.push('/login');
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const readerElement = document.getElementById('reader');
+    if (!readerElement) return;
+
+    try {
       scannerRef.current = new Html5Qrcode('reader');
+    } catch {
+      setMessage('Unable to initialize the QR scanner.');
     }
 
     return () => {
       scannerRef.current?.stop().catch(() => undefined);
+      scannerRef.current = null;
     };
-  }, [router]);
+  }, [user]);
 
   const updateSection = async () => {
     const stored = localStorage.getItem('user');
