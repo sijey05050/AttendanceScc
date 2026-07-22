@@ -1,10 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import { getSupabaseAdminClient, getSupabaseConfig } from './supabase';
 
 type TableName = 'teachers' | 'students' | 'subjects' | 'attendance_sessions' | 'attendance_records';
 
 type Store = Record<TableName, any[]>;
+
+type DbQueryExecutor = {
+  get: (...params: any[]) => Promise<any>;
+  all: (...params: any[]) => Promise<any[]>;
+  run: (...params: any[]) => Promise<any>;
+};
 
 class JsonDatabase {
   private filePath: string;
@@ -23,6 +30,10 @@ class JsonDatabase {
     this.load();
   }
 
+  initialize() {
+    this.load();
+  }
+
   private ensureDirectory() {
     const dir = path.dirname(this.filePath);
     if (!fs.existsSync(dir)) {
@@ -38,8 +49,25 @@ class JsonDatabase {
     }
 
     const raw = fs.readFileSync(this.filePath, 'utf8');
-    const parsed = JSON.parse(raw);
-    this.store = { ...this.store, ...parsed };
+    if (!raw.trim()) {
+      this.seed();
+      this.save();
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      this.store = { ...this.store, ...parsed };
+    } catch {
+      this.store = {
+        teachers: [],
+        students: [],
+        subjects: [],
+        attendance_sessions: [],
+        attendance_records: [],
+      };
+    }
+
     this.seed();
     this.save();
   }
@@ -61,23 +89,19 @@ class JsonDatabase {
     ];
 
     const existingNames = new Set(this.store.subjects.map((item) => item.subject_name));
-    subjects.forEach((subject, index) => {
+    subjects.forEach((subject) => {
       if (!existingNames.has(subject)) {
         this.store.subjects.push({ id: this.store.subjects.length + 1, subject_name: subject });
       }
     });
   }
 
-  prepare(query: string) {
+  prepare(query: string): DbQueryExecutor {
     return {
-      get: (...params: any[]) => this.select(query, params),
-      all: (...params: any[]) => this.selectAll(query, params),
-      run: (...params: any[]) => this.run(query, ...params),
+      get: async (...params: any[]) => this.select(query, params),
+      all: async (...params: any[]) => this.selectAll(query, params),
+      run: async (...params: any[]) => this.runQuery(query, params),
     };
-  }
-
-  exec(_query: string) {
-    return undefined;
   }
 
   private select(query: string, params: any[] = []) {
@@ -147,7 +171,7 @@ class JsonDatabase {
     return item[column] === param;
   }
 
-  run(query: string, ...params: any[]) {
+  private runQuery(query: string, params: any[] = []) {
     const insertMatch = query.match(/INSERT(?:\s+OR\s+IGNORE)?\s+INTO\s+(\w+)\s*\((.*?)\)\s*VALUES\s*\((.*?)\)/i);
     if (insertMatch) {
       const [, tableName, columnsText] = insertMatch;
@@ -212,13 +236,196 @@ class JsonDatabase {
   }
 }
 
-const dbPath = path.join(process.cwd(), 'data', 'attendance.json');
-const db = new JsonDatabase(dbPath);
+class SupabaseDatabase {
+  private serviceRoleKey: string;
 
-export function initializeDatabase() {
-  db.prepare('SELECT 1').get();
+  constructor(serviceRoleKey: string) {
+    this.serviceRoleKey = serviceRoleKey;
+  }
+
+  initialize() {
+    return undefined;
+  }
+
+  prepare(query: string): DbQueryExecutor {
+    return {
+      get: async (...params: any[]) => this.select(query, params),
+      all: async (...params: any[]) => this.selectAll(query, params),
+      run: async (...params: any[]) => this.runQuery(query, params),
+    };
+  }
+
+  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    if (!this.serviceRoleKey) {
+      throw new Error('Supabase service role key is not configured');
+    }
+
+    const { url } = getSupabaseConfig();
+    const response = await fetch(`${url}/rest/v1${path}`, {
+      ...init,
+      headers: {
+        apikey: this.serviceRoleKey,
+        Authorization: `Bearer ${this.serviceRoleKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+        ...(init.headers || {}),
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Supabase request failed: ${response.status} ${text}`);
+    }
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    return response.json() as Promise<T>;
+  }
+
+  private async select(query: string, params: any[] = []) {
+    const match = query.match(/SELECT\s+(.+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+))?/i);
+    if (!match) {
+      return null;
+    }
+
+    const [, selected, tableName, whereClause] = match;
+    let path = `/${tableName}`;
+    const searchParams = new URLSearchParams();
+    searchParams.set('select', selected === '*' ? '*' : selected.replace(/\s+/g, ''));
+
+    if (whereClause) {
+      const clauses = whereClause.split(/\s+AND\s+/i);
+      clauses.forEach((clause, index) => {
+        const matchClause = clause.match(/(\w+)\s*=\s*\?/i);
+        if (matchClause) {
+          const [, column] = matchClause;
+          searchParams.set(column, `eq.${params[index]}`);
+        }
+      });
+    }
+
+    const url = new URLSearchParams(searchParams);
+    if (url.toString()) {
+      path += `?${url.toString()}`;
+    }
+
+    try {
+      const data = await this.request<any[]>(path);
+      if (selected.includes('COUNT(*)')) {
+        return { count: data.length };
+      }
+      return data[0] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async selectAll(query: string, params: any[] = []) {
+    const match = query.match(/SELECT\s+(.+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+))?/i);
+    if (!match) {
+      return [];
+    }
+
+    const [, , tableName, whereClause] = match;
+    let path = `/${tableName}`;
+    const searchParams = new URLSearchParams();
+    searchParams.set('select', '*');
+
+    if (whereClause) {
+      const clauses = whereClause.split(/\s+AND\s+/i);
+      clauses.forEach((clause, index) => {
+        const matchClause = clause.match(/(\w+)\s*=\s*\?/i);
+        if (matchClause) {
+          const [, column] = matchClause;
+          searchParams.set(column, `eq.${params[index]}`);
+        }
+      });
+    }
+
+    const url = new URLSearchParams(searchParams);
+    if (url.toString()) {
+      path += `?${url.toString()}`;
+    }
+
+    try {
+      return await this.request<any[]>(path);
+    } catch {
+      return [];
+    }
+  }
+
+  private async runQuery(query: string, params: any[] = []) {
+    const insertMatch = query.match(/INSERT(?:\s+OR\s+IGNORE)?\s+INTO\s+(\w+)\s*\((.*?)\)\s*VALUES\s*\((.*?)\)/i);
+    if (insertMatch) {
+      const [, tableName, columnsText] = insertMatch;
+      const columns = columnsText.split(',').map((col) => col.trim());
+      const payload = columns.reduce((acc, column, index) => ({ ...acc, [column]: params[index] }), {});
+      const data = await this.request<any[]>(`/${tableName}`, {
+        method: 'POST',
+        body: JSON.stringify([payload]),
+      });
+      return { lastInsertRowid: data[0]?.id || 1 };
+    }
+
+    const updateMatch = query.match(/UPDATE\s+(\w+)\s+SET\s+(.+)\s+WHERE\s+(.+)/i);
+    if (updateMatch) {
+      const [, tableName, setClause, whereClause] = updateMatch;
+      const assignments = setClause.split(',').map((entry) => entry.trim());
+      const payload = assignments.reduce((acc, entry, index) => {
+        const assignMatch = entry.match(/(\w+)\s*=\s*\?/i);
+        if (assignMatch) {
+          const [, column] = assignMatch;
+          acc[column] = params[index];
+        }
+        return acc;
+      }, {} as Record<string, any>);
+
+      const whereMatch = whereClause.match(/(\w+)\s*=\s*\?/i);
+      if (!whereMatch) {
+        return { changes: 0 };
+      }
+      const [, whereColumn] = whereMatch;
+      const targetId = params[params.length - 1];
+      await this.request(`/${tableName}?${whereColumn}=eq.${targetId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      return { changes: 1 };
+    }
+
+    const deleteMatch = query.match(/DELETE\s+FROM\s+(\w+)\s+WHERE\s+(.+)/i);
+    if (deleteMatch) {
+      const [, tableName, whereClause] = deleteMatch;
+      const whereMatch = whereClause.match(/(\w+)\s*=\s*\?/i);
+      if (!whereMatch) {
+        return { changes: 0 };
+      }
+      const [, whereColumn] = whereMatch;
+      const targetId = params[0];
+      await this.request(`/${tableName}?${whereColumn}=eq.${targetId}`, {
+        method: 'DELETE',
+      });
+      return { changes: 1 };
+    }
+
+    return { changes: 0 };
+  }
 }
 
+const dbPath = path.join(process.cwd(), 'data', 'attendance.json');
+let db: JsonDatabase | SupabaseDatabase | null = null;
+
 export function getDb() {
+  if (!db) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    db = serviceRoleKey ? new SupabaseDatabase(serviceRoleKey) : new JsonDatabase(dbPath);
+  }
+
   return db;
+}
+
+export function initializeDatabase() {
+  getDb().initialize();
 }
