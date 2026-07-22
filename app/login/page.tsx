@@ -42,22 +42,36 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div className="card" style={{ width: 420 }}>
-        <h2>Login</h2>
-        <p style={{ color: '#64748b' }}>Access the system as a student or teacher.</p>
-        <select value={role} onChange={(e) => setRole(e.target.value as 'student' | 'teacher')} style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <option value="student">Student</option>
-          <option value="teacher">Teacher</option>
-        </select>
-        <form onSubmit={submit}>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} required />
-          <button className="btn btn-primary" style={{ width: '100%' }} type="submit">Login</button>
+    <main className="login-wrapper">
+      <div className="login-card">
+        <div className="login-hero">
+          <div className="login-hero-icon" aria-hidden>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" fill="white" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" />
+              <path d="M14 14h2v2h-2z" fill="white" />
+            </svg>
+          </div>
+          <h1 className="login-title">Welcome back</h1>
+          <p className="login-subtitle">Sign in to the QR Attendance System</p>
+        </div>
+
+        <form onSubmit={submit} className="login-form">
+          <label className="input-label">Username</label>
+          <input className="input-field" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required />
+
+          <label className="input-label">Password</label>
+          <input className="input-field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+
+          <button className="btn btn-primary login-submit" type="submit">Sign in</button>
         </form>
-        {message ? <p style={{ marginTop: 12, color: 'crimson' }}>{message}</p> : null}
-        <p style={{ marginTop: 16 }}><a href="/signup" style={{ color: '#2563eb' }}>Need an account? Sign up</a></p>
-        <p style={{ marginTop: 8 }}><a href="/" style={{ color: '#0f766e' }}>Go back home</a></p>
+
+        {message ? <p className="login-error">{message}</p> : null}
+
+        <div className="login-footer">
+          <p>Don't have an account? <a href="/signup">Sign up</a></p>
+        </div>
       </div>
     </main>
   );

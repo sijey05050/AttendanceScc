@@ -1,1 +1,1 @@
-{"/_not-found/page":"/_not-found","/api/auth/route":"/api/auth","/api/student/route":"/api/student","/dashboard/page":"/dashboard","/login/page":"/login","/signup/page":"/signup","/api/teacher/route":"/api/teacher","/page":"/","/teacher/page":"/teacher"}
+{"/_not-found/page":"/_not-found","/api/teacher/route":"/api/teacher","/page":"/","/api/student/route":"/api/student","/api/auth/route":"/api/auth","/signup/page":"/signup","/teacher/page":"/teacher","/login/page":"/login","/dashboard/page":"/dashboard"}
