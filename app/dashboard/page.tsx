@@ -64,6 +64,12 @@ export default function DashboardPage() {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+    router.push('/login');
+  };
+
   const scanQr = async () => {
     if (!scannerRef.current) return;
     setScanning(true);
@@ -90,28 +96,43 @@ export default function DashboardPage() {
   if (!user) return <div className="container">Loading...</div>;
 
   return (
-    <main className="container">
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2>Student Dashboard</h2>
-        <p>Welcome, {user.name}</p>
-        <p>Selected Year & Section: <strong>{user.year_section}</strong></p>
+    <main className="container student-dashboard">
+      <div className="dashboard-header">
+        <div>
+          <p className="dashboard-subtitle">Student Portal</p>
+          <h1>Welcome, {user.name}</h1>
+          <p className="dashboard-description">Your attendance and section controls.</p>
+        </div>
+        <button className="btn btn-secondary logout-button" onClick={logout}>Logout</button>
       </div>
-      <div className="grid grid-2">
-        <div className="card">
+
+      <div className="dashboard-stats">
+        <div className="stat-card">
+          <p>Current Section</p>
+          <h2>{user.year_section}</h2>
+        </div>
+        <div className="stat-card">
+          <p>Scan Status</p>
+          <h2>{result ? 'Ready' : 'Idle'}</h2>
+        </div>
+      </div>
+
+      <div className="dashboard-grid">
+        <section className="card student-panel">
           <h3>Year & Section</h3>
-          <select value={section} onChange={(e) => setSection(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 10, marginBottom: 12, border: '1px solid #cbd5e1' }}>
+          <select value={section} onChange={(e) => setSection(e.target.value)} className="input-field">
             {['2-A','2-B','3-A','3-B','4-A','4-B'].map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
           <button className="btn btn-primary" onClick={updateSection}>Save section</button>
-          {message ? <p style={{ marginTop: 12, color: 'green' }}>{message}</p> : null}
-        </div>
-        <div className="card">
+        </section>
+
+        <section className="card student-panel">
           <h3>Attendance</h3>
           <p>Scan a teacher-generated QR code to mark attendance.</p>
           <button className="btn btn-primary" onClick={scanQr} disabled={scanning}>{scanning ? 'Scanning...' : 'Start QR Scanner'}</button>
-          <div id="reader" style={{ width: '100%', maxWidth: 320, marginTop: 12 }} />
-          {result ? <p style={{ marginTop: 12 }}>{result}</p> : null}
-        </div>
+          <div id="reader" className="scanner-box" />
+          {message ? <p className="field-note">{message}</p> : null}
+        </section>
       </div>
     </main>
   );

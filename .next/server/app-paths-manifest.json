@@ -1,11 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/teacher/route": "app/api/teacher/route.js",
-  "/page": "app/page.js",
-  "/api/student/route": "app/api/student/route.js",
   "/api/auth/route": "app/api/auth/route.js",
-  "/signup/page": "app/signup/page.js",
-  "/teacher/page": "app/teacher/page.js",
+  "/api/student/route": "app/api/student/route.js",
+  "/api/teacher/route": "app/api/teacher/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/login/page": "app/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/page": "app/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/teacher/page": "app/teacher/page.js"
 }

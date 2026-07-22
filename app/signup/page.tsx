@@ -25,19 +25,63 @@ export default function SignupPage() {
   };
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div className="card" style={{ width: 480 }}>
-        <h2>Student Signup</h2>
-        <form onSubmit={submit}>
-          <input value={lastname} onChange={(e) => setLastname(e.target.value)} placeholder="Last Name" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} required />
-          <input value={firstname} onChange={(e) => setFirstname(e.target.value)} placeholder="First Name" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} required />
-          <input value={middlename} onChange={(e) => setMiddlename(e.target.value)} placeholder="Middle Name" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} />
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 10, border: '1px solid #cbd5e1' }} required />
-          <button className="btn btn-primary" style={{ width: '100%' }} type="submit">Create account</button>
+    <main className="login-wrapper">
+      <div className="login-card">
+        <div className="login-hero">
+          <div className="login-hero-icon" aria-hidden>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v3h-2V7h-4v2h-2V6a2 2 0 0 0-2-2H8V4a2 2 0 0 1 2-2h2z" fill="white" />
+            </svg>
+          </div>
+          <h1 className="login-title">Create student account</h1>
+          <p className="login-subtitle">Fill in your details to get started</p>
+        </div>
+
+        <form onSubmit={submit} className="signup-form">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div>
+              <label className="input-label">Last name</label>
+              <input className="input-field" value={lastname} onChange={(e) => setLastname(e.target.value)} placeholder="" required />
+            </div>
+            <div>
+              <label className="input-label">First name</label>
+              <input className="input-field" value={firstname} onChange={(e) => setFirstname(e.target.value)} placeholder="" required />
+            </div>
+            <div>
+              <label className="input-label">Middle name</label>
+              <input className="input-field" value={middlename} onChange={(e) => setMiddlename(e.target.value)} placeholder="" />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label className="input-label">Username</label>
+            <input className="input-field" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="" required />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: 12, marginTop: 12 }}>
+            <div>
+              <label className="input-label">Password</label>
+              <input className="input-field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="" required />
+            </div>
+            <div>
+              <label className="input-label">Year & Section</label>
+              <select className="input-field" defaultValue="2-A">
+                <option value="2-A">2-A</option>
+                <option value="2-B">2-B</option>
+                <option value="3-A">3-A</option>
+                <option value="3-B">3-B</option>
+              </select>
+            </div>
+          </div>
+
+          <button className="btn btn-primary login-submit" style={{ marginTop: 16 }} type="submit">Create account</button>
         </form>
-        {message ? <p style={{ marginTop: 12, color: message.includes('created') ? 'green' : 'crimson' }}>{message}</p> : null}
-        <p style={{ marginTop: 16 }}><a href="/login" style={{ color: '#2563eb' }}>Go back to login</a></p>
+
+        {message ? <p className="login-error">{message}</p> : null}
+
+        <div className="login-footer" style={{ marginTop: 12 }}>
+          <p>Already have an account? <a href="/login">Back to login</a></p>
+        </div>
       </div>
     </main>
   );
