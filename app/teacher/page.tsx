@@ -63,9 +63,14 @@ export default function TeacherPage() {
   };
 
   const logout = () => {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem('user');
     localStorage.removeItem('role');
-    router.push('/login');
+    try {
+      router.push('/login');
+    } catch {
+      window.location.href = '/login';
+    }
   };
 
   if (!user) return <div className="container">Loading...</div>;

@@ -65,9 +65,14 @@ export default function DashboardPage() {
   };
 
   const logout = () => {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem('user');
     localStorage.removeItem('role');
-    router.push('/login');
+    try {
+      router.push('/login');
+    } catch {
+      window.location.href = '/login';
+    }
   };
 
   const scanQr = async () => {
