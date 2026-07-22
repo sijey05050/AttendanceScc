@@ -1,0 +1,31 @@
+{
+  "teachers": [
+    {
+      "id": 1,
+      "name": "Teacher Sijey",
+      "username": "@dm!n_cj",
+      "password": "$2a$10$wPhn9nLexfm9/ZlBvAsjvew0/Q7uMlEeqHXaeBqZbTtqPmDKcxHzS"
+    }
+  ],
+  "students": [],
+  "subjects": [
+    {
+      "id": 1,
+      "subject_name": "Information Assurance and Security 1"
+    },
+    {
+      "id": 2,
+      "subject_name": "Information Assurance and Security 2"
+    },
+    {
+      "id": 3,
+      "subject_name": "Information Management"
+    },
+    {
+      "id": 4,
+      "subject_name": "Web Systems and Technologies"
+    }
+  ],
+  "attendance_sessions": [],
+  "attendance_records": []
+}
