@@ -70,9 +70,9 @@ export default function TeacherPage() {
     localStorage.removeItem('user');
     localStorage.removeItem('role');
     try {
-      router.push('/login');
+      router.replace('/login');
     } catch {
-      window.location.href = '/login';
+      window.location.assign('/login');
     }
   };
 

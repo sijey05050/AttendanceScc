@@ -32,6 +32,19 @@ export default function DashboardPage() {
     }
   }, [router]);
 
+  const stopScanner = async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+
+    try {
+      await scanner.stop();
+    } catch {
+      // Ignore cleanup errors when the scanner is already stopped or never started.
+    } finally {
+      scannerRef.current = null;
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
 
@@ -45,8 +58,7 @@ export default function DashboardPage() {
     }
 
     return () => {
-      scannerRef.current?.stop().catch(() => undefined);
-      scannerRef.current = null;
+      void stopScanner();
     };
   }, [user]);
 
@@ -83,7 +95,7 @@ export default function DashboardPage() {
       await scannerRef.current.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 250 } }, async (decodedText) => {
         const response = await fetch('/api/student', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'scan-qr', studentId: user?.id, studentName: user?.name, year_section: section, qrPayload: decodedText }) });
         const data = await response.json();
-        await scannerRef.current?.stop();
+        await stopScanner();
         setScanning(false);
         if (!response.ok) {
           setMessage(data.error || 'Scan failed');
