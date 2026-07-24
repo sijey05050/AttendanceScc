@@ -46,21 +46,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
-
-    const readerElement = document.getElementById('reader');
-    if (!readerElement) return;
-
-    try {
-      scannerRef.current = new Html5Qrcode('reader');
-    } catch {
-      setMessage('Unable to initialize the QR scanner.');
-    }
-
     return () => {
       void stopScanner();
     };
-  }, [user]);
+  }, []);
 
   const updateSection = async () => {
     const stored = localStorage.getItem('user');
@@ -88,10 +77,27 @@ export default function DashboardPage() {
   };
 
   const scanQr = async () => {
-    if (!scannerRef.current) return;
     setScanning(true);
     setMessage('');
+
     try {
+      if (!scannerRef.current) {
+        const readerElement = document.getElementById('reader');
+        if (!readerElement) {
+          setScanning(false);
+          setMessage('Camera view is not ready yet.');
+          return;
+        }
+
+        try {
+          scannerRef.current = new Html5Qrcode('reader');
+        } catch {
+          setScanning(false);
+          setMessage('Unable to initialize the QR scanner.');
+          return;
+        }
+      }
+
       await scannerRef.current.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 250 } }, async (decodedText) => {
         const response = await fetch('/api/student', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'scan-qr', studentId: user?.id, studentName: user?.name, year_section: section, qrPayload: decodedText }) });
         const data = await response.json();
